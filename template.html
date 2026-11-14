@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Handoff: TITLE</title>
+<style>
+:root{--bg:#fff;--fg:#1d1f23;--muted:#5d6470;--border:#d9dde3;--surface:#f5f6f8;--accent:#2f6fde;--ok:#1d8a4a;--bad:#c4352b}
+@media (prefers-color-scheme:dark){:root{--bg:#16181c;--fg:#e4e6ea;--muted:#9aa1ad;--border:#30343b;--surface:#1f2228;--accent:#6aa0ff;--ok:#4cc27d;--bad:#ff6b5e}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:24px 24px 120px}
+h1{font-size:26px;margin:8px 0 4px}h2{font-size:20px;margin:0 0 8px}h3{font-size:15px;margin:18px 0 6px;color:var(--muted)}
+.lede,.muted{color:var(--muted)}
+nav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 22px}nav a{font-size:13px;padding:3px 9px;border:1px solid var(--border);border-radius:12px;color:var(--fg);text-decoration:none}
+section{border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin:0 0 22px}
+.figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin:10px 0}
+figure{margin:0}figure img{width:100%;border-radius:6px;border:1px solid var(--border);display:block}
+figcaption{font-size:12px;color:var(--muted);margin-top:3px}
+pre{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 12px;overflow:auto;font:12.5px/1.45 ui-monospace,Consolas,monospace;white-space:pre-wrap}
+code{font-family:ui-monospace,Consolas,monospace;font-size:.92em}
+table{border-collapse:collapse;margin:8px 0;font-size:14px}th,td{border:1px solid var(--border);padding:4px 10px;text-align:left;vertical-align:top}
+.ok{color:var(--ok);font-weight:600}.bad{color:var(--bad);font-weight:600}
+.comment{margin-top:14px;border-top:1px dashed var(--border);padding-top:10px}
+.comment label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
+textarea{width:100%;min-height:70px;resize:vertical;background:var(--surface);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:8px;font:14px/1.45 system-ui,sans-serif}
+textarea.filled{border-color:var(--accent)}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:10px 24px;display:flex;gap:12px;align-items:center;justify-content:center}
+button{font:600 14px system-ui,sans-serif;padding:8px 16px;border-radius:7px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}#status{font-size:13px;color:var(--muted);min-width:240px}
+</style>
+</head>
+<body><main>
+<h1>TITLE</h1>
+<p class="lede">SUMMARY (3–5 lines: asked, done, state). Comments are saved in this browser; <b>Copy all comments</b> puts them on the clipboard as Markdown.</p>
+<nav><a href="#item-1">Item 1</a><a href="#limits">Not done / not verified</a></nav>
+
+<!-- One <section> per item. data-key must be unique on the page. -->
+<section id="item-1">
+  <h2>ITEM TITLE</h2>
+  <p>What changed and why.</p>
+  <h3>Files</h3>
+  <ul><li><a href="file://wsl.localhost/DISTRO/abs/path/file.py">/abs/path/file.py</a></li></ul>
+  <h3>Evidence</h3>
+  <div class="figs"><figure><img src="media/example.png" alt=""><figcaption>caption</figcaption></figure></div>
+  <pre>$ test command
+result</pre>
+  <div class="comment"><label>Your comments on Item 1</label>
+    <textarea data-key="item-1" data-title="ITEM TITLE" placeholder="What to change, keep, or drop. Leave empty if fine."></textarea></div>
+</section>
+
+<section id="limits">
+  <h2>Not done / not verified</h2>
+  <ul><li>…</li></ul>
+  <div class="comment"><label>Overall comments</label>
+    <textarea data-key="overall" data-title="Overall" placeholder="Anything else."></textarea></div>
+</section>
+</main>
+<div class="bar"><button onclick="copyAll()">Copy all comments (<span id="count">0</span>)</button>
+<button class="ghost" onclick="clearAll()">Clear</button><span id="status"></span></div>
+<script>
+const KEY='handoff-STORAGE-KEY';   // unique per page
+const boxes=[...document.querySelectorAll('textarea[data-key]')];
+const load=()=>JSON.parse(localStorage.getItem(KEY)||'{}');
+function refresh(){boxes.forEach(b=>b.classList.toggle('filled',!!b.value.trim()));
+  document.getElementById('count').textContent=boxes.filter(b=>b.value.trim()).length;}
+boxes.forEach(b=>{b.value=load()[b.dataset.key]||'';b.addEventListener('input',()=>{
+  const s=load();s[b.dataset.key]=b.value;localStorage.setItem(KEY,JSON.stringify(s));refresh();});});
+refresh();
+async function copyAll(){const items=boxes.filter(b=>b.value.trim());const st=document.getElementById('status');
+  if(!items.length){st.textContent='Nothing to copy: all comment boxes are empty.';return;}
+  const text='Comments on handoff "'+document.title+'":\n\n'+items.map(b=>'## '+b.dataset.title+'\n'+b.value.trim()).join('\n\n')+'\n';
+  let ok=false;const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();
+  try{ok=document.execCommand('copy');}catch(e){}t.remove();
+  if(!ok)try{await Promise.race([navigator.clipboard.writeText(text),new Promise((_,r)=>setTimeout(r,1500))]);ok=true;}catch(e){}
+  st.textContent=ok?'Copied '+items.length+' comment(s) – paste into the chat.':'Copy blocked by the browser: select the comment text manually.';}
+function clearAll(){if(!confirm('Clear all comments?'))return;localStorage.removeItem(KEY);boxes.forEach(b=>b.value='');refresh();
+  document.getElementById('status').textContent='Cleared.';}
+</script>
+</body></html>
