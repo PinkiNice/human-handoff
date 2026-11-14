@@ -18,6 +18,14 @@ On invocation, build the page from the current session's work right away. Do not
 
 Rules: only show evidence you actually produced; label inferences. No external CDNs. Images must load from the page folder.
 
+## Formats
+- **Anything that moves or is interacted with** (animation, turntable, UI flow, hover/click, before→after transition): show it as video, as an animated **GIF** in a plain `<img>`. It autoplays and loops from `file://`. Prefer one GIF over a strip of stills. Keep it ≤10 s, ≤800 px wide, 10–15 fps, under ~5 MB; capture only the region that changes.
+  - From a clip: `ffmpeg -i in.mp4 -vf "fps=12,scale=720:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse" -loop 0 out.gif`
+  - From frames: same, with `-framerate 12 -i frame_%03d.png` as input.
+- **Static result**: PNG for UI, renders and sharp edges; JPEG for photo-like images. Show before/after side by side at the same size and crop.
+- **Numbers**: a table (measured vs target, with units), not prose.
+- **Logs/test output**: `<pre>` with the command and only the relevant lines.
+
 ## Links (always full path, clickable, opens in a browser)
 Get the absolute path, then:
 - WSL (`$WSL_DISTRO_NAME` set): `file://wsl.localhost/$WSL_DISTRO_NAME/<abs path without leading />`
